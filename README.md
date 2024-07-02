@@ -7,6 +7,8 @@
 
 The "Template String Magic" extension for Visual Studio Code enhances your coding experience by automatically converting string literals with embedded expressions into template strings. This plugin increases productivity and reduces errors by providing seamless string manipulations directly within your code editor.
 
+![animation](./img/animation.gif)
+
 ## Features
 
 - **Automatic Conversion**: Automatically converts string literals with `${}` into template strings.
