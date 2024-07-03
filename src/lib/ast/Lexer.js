@@ -61,6 +61,7 @@ module.exports.Lexer = class Lexer {
     }
   }
 
+  // eslint-disable-next-line max-statements
   readString(quoteType) {
     const startPosition = { ...this.position }
     let globalStart = this.position.index
@@ -69,6 +70,15 @@ module.exports.Lexer = class Lexer {
 
     while (this.ch !== quoteType && this.ch !== null) {
       this.readChar()
+    }
+
+    // get quote prev char
+    const prevChat = this.input[this.readPosition.index - 2]
+    if (prevChat === '\\') {
+      this.readChar() // Move past the opening quote
+      while (this.ch !== quoteType && this.ch !== null) {
+        this.readChar()
+      }
     }
 
     const literal = this.input.substring(position, this.position.index)
@@ -84,14 +94,13 @@ module.exports.Lexer = class Lexer {
           end: endPosition
         }
       }
-    } else {
-      return {
-        type: 'ILLEGAL',
-        literal: this.input.substring(position),
-        position: {
-          global: { start: globalStart, end: this.position.index },
-          start: startPosition
-        }
+    }
+    return {
+      type: 'ILLEGAL',
+      literal: this.input.substring(position),
+      position: {
+        global: { start: globalStart, end: this.position.index },
+        start: startPosition
       }
     }
   }
