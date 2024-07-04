@@ -1,6 +1,6 @@
+const { magic } = require('./magic')
+
 const vscode = require('vscode')
-const { Lexer } = require('./lib/ast/Lexer.js')
-const { Parser } = require('./lib/ast/Parser.js')
 
 /**
  *
@@ -15,7 +15,6 @@ async function onDidChangeTextDocument(event) {
   }
 
   const document = editor.document
-  const content = document.getText()
 
   // Get the changes
   const changes = event.contentChanges
@@ -27,55 +26,13 @@ async function onDidChangeTextDocument(event) {
   const cursorPosition = changeRange.end
 
   // Check if the user has entered "${"
-  if (
-    changeText === '{' &&
-    document.getText(
-      new vscode.Range(changeRange.start.translate(0, -1), changeRange.start)
-    ) === '$'
-  ) {
-    // Lexer and Parser usage
-    const lexer = new Lexer(content)
-    const parser = new Parser(lexer)
-    const ast = parser.parseProgram()
-
-    // Check if the cursor is within a string literal that should be converted
-    for (const node of ast.body) {
-      if (node.type === 'StringLiteral') {
-        const startGlobal = node.position.global.start
-        const endGlobal = node.position.global.end
-        const start = node.position.start.column
-        const end = node.position.end.column
-        const startRow = node.position.start.row
-
-        // eslint-disable-next-line max-depth
-        if (
-          node.value.includes('${') &&
-          cursorPosition.line + 1 === startRow &&
-          cursorPosition.character + 1 >= start &&
-          cursorPosition.character + 1 <= end
-        ) {
-          const edit = new vscode.WorkspaceEdit()
-
-          // Replace the string literal with backticks
-          const range = new vscode.Range(
-            document.positionAt(startGlobal),
-            document.positionAt(endGlobal + 1)
-          )
-          edit.replace(document.uri, range, '`' + node.value + '`')
-
-          // Insert the closing "}"
-          const insertPosition = cursorPosition.translate(0, 1)
-          edit.insert(document.uri, insertPosition, '}')
-
-          // Apply the edit
-          await vscode.workspace.applyEdit(edit)
-
-          // Move the cursor back to between "${}"
-          const newPosition = cursorPosition.translate(0, 1)
-          editor.selection = new vscode.Selection(newPosition, newPosition)
-        }
-      }
-    }
+  const start = changeRange.start
+  const range = new vscode.Range(start.translate(0, -1), start)
+  const getPrevChar = document.getText(range)
+  if (changeText === '{' && getPrevChar === '$') {
+    await magic({ cursorPosition })
+  } else if (changeText === '{}' && getPrevChar === '$') {
+    await magic({ cursorPosition, isSingle: false })
   }
 }
 
