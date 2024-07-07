@@ -9,6 +9,9 @@ The "Template String Magic" extension for Visual Studio Code enhances your codin
 
 ![animation](./img/animation.gif)
 
+By default it will take effect on all files, you can specify that it will take effect on a particular file (please click on the lower right plus to add or remove), once a file is added, only these added file types will take effect
+![custom-file-type-animation](./img/custom-file-type-animation.gif)
+
 ## Features
 
 - **Automatic Conversion**: Automatically converts string literals with `${}` into template strings.
@@ -18,7 +21,6 @@ The "Template String Magic" extension for Visual Studio Code enhances your codin
 ## Motive
 
 Inspired by the [template-string-converter](https://github.com/meganrogge/template-string-converter) extension just to work around some bugs in [template-string-converter](https://github.com/meganrogge/template-string-converter), many of the bugs in [issues](https://github.com/meganrogge/template-string-converter/issues?q=is%3Aissue+is%3Aopen) are unfixed and using regular expression matching, there are issues with matching errors, so reimplementing these features using AST would be more Precise
-
 
 ## Installation
 
