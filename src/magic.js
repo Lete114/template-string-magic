@@ -2,7 +2,54 @@ const vscode = require('vscode')
 const { Lexer } = require('./lib/ast/Lexer.js')
 const { Parser } = require('./lib/ast/Parser.js')
 
-module.exports.magic = magic
+module.exports = { magic, onDidChangeTextDocument }
+
+/**
+ *
+ * @param {vscode.ExtensionContext} context
+ * @returns
+ */
+async function onDidChangeTextDocument(context) {
+  const disposableMagic = vscode.workspace.onDidChangeTextDocument(
+    // eslint-disable-next-line max-statements
+    async (event) => {
+      const editor = vscode.window.activeTextEditor
+      if (!editor) return
+
+      const globalState = context.globalState
+      const fileTypes = globalState.get('fileTypes', [])
+      const document = editor.document
+      const fileType = document.languageId
+
+      // If the fileTypes array is not empty and does not include the current file type,
+      // it means the extension does not apply to the current file type.
+      if (fileTypes.length && !fileTypes.includes(fileType)) return
+
+      // Get the changes
+      const changes = event.contentChanges
+      if (changes.length === 0) return
+
+      const latestChange = changes[changes.length - 1]
+      const changeText = latestChange.text
+      const changeRange = latestChange.range
+      const cursorPosition = changeRange.end
+
+      // Check if the user has entered "${" or "{}"
+      const start = changeRange.start
+      const range = new vscode.Range(start.translate(0, -1), start)
+      const getPrevChar = document.getText(range)
+
+      if (getPrevChar === '$') {
+        if (changeText === '{') {
+          await magic({ cursorPosition })
+        } else if (changeText === '{}') {
+          await magic({ cursorPosition, isSingle: false })
+        }
+      }
+    }
+  )
+  context.subscriptions.push(disposableMagic)
+}
 
 /**
  *
@@ -75,7 +122,6 @@ async function magic(options) {
  * @param {number} startGlobal
  * @returns {boolean}
  */
-// eslint-disable-next-line max-statements
 function isHtmlAttributeValue(content, startGlobal) {
   // Check if the current character is a double quote or a single quote
   const quote = content[startGlobal]
@@ -88,27 +134,14 @@ function isHtmlAttributeValue(content, startGlobal) {
     return false
   }
 
-  // Check if the context is within an HTML tag
-  let foundLessThan = false
-  for (let i = startGlobal - 2; i >= 0; i--) {
-    if (content[i] === '<') {
-      foundLessThan = true
-      break
-    }
-  }
-  if (!foundLessThan) {
-    return false
-  }
-
-  // Find the attribute name, which ends before the equal sign with a whitespace or a tag start symbol
   let attr = ''
   let i = startGlobal - 2
-  while (i >= 0 && content[i] !== ' ' && content[i] !== '<') {
+  while (i >= 0 && content[i] !== ' ') {
     attr = content[i] + attr
     i--
   }
 
   // Validate the attribute name with a regular expression
   const regex = /^[a-zA-Z_:][a-zA-Z0-9_:-]*$/
-  return regex.test(attr.trim())
+  return regex.test(attr.trimStart())
 }

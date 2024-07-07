@@ -14,7 +14,14 @@
     "onLanguage"
   ],
   "main": "./src/extension.js",
-  "contributes": {},
+  "contributes": {
+    "commands": [
+      {
+        "command": "TemplateStringMagic.toggleFileType",
+        "title": "Toggle Add/Remove File Type"
+      }
+    ]
+  },
   "scripts": {
     "lint": "eslint ."
   },
